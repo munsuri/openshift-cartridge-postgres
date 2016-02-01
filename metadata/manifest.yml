@@ -1,23 +1,22 @@
-Name: pg
+---
+Name: postgres
 Cartridge-Short-Name: PG
-Display-Name: postgresql-crunchy
-Description: base postgres cartridge provided currently based on postgresql release 9.3.4
-Version: "1.0"
-Website: http://www.crunchydatasolutions.com
-Cartridge-Version: 1.0.0
-Cartridge-Vendor: crunchydatasolutions
+Display-Name: PostgreSQL 9.4.5
+Description: The PostgreSQL database, version 9.4.5.
+Version: "9.4.5"
+Website: https://github.com/liberapay/openshift-cartridge-postgres
+Cartridge-Version: 0.0.1
+Cartridge-Vendor: liberapay
 Categories:
   - service
   - database
   - embedded
 Provides:
-  - pg-1.0
-  - pg
+  - postgresql-9.4
+  - postgresql
 Publishes:
   publish-db-connection-info:
     Type: ENV:NET_TCP:db:connection-info
-  publish-ld-library-path-info:
-    Type: ENV:NET_TCP:db:ld-library-path-info
 Scaling:
   Min: 1
   Max: 1
@@ -27,6 +26,4 @@ Endpoints:
     Private-Port:      5432
     Public-Port-Name:  PORT
     Protocols:
-     -postgresql
-    
-Source-Url: https://github.com/crunchyds/openshift-postgres-cartridge.git
+     - postgresql
