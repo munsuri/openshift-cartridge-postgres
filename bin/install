@@ -1,9 +1,7 @@
-#!/bin/bash -e
+#!/bin/bash -eu
 
 
 source $OPENSHIFT_CARTRIDGE_SDK_BASH
-
-#mkdir -p $OPENSHIFT_DATA_DIR/.rls/data
 
 echo "running initdb....`date`"
 

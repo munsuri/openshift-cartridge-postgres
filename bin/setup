@@ -1,11 +1,11 @@
-#!/bin/bash 
+#!/bin/bash -eu
 
 version=pg-9.3.6
 
 source $OPENSHIFT_CARTRIDGE_SDK_BASH
 
 for dir in logs pid tmp env; do
-	mkdir -p $dir
+    mkdir -p $dir
 done
 
 rm -rf $OPENSHIFT_PG_DIR/versions/$version/
@@ -18,7 +18,7 @@ tar xzf $OPENSHIFT_PG_DIR/versions/$version-crunchy.tar.gz --directory=$OPENSHIF
 
 rm  $OPENSHIFT_PG_DIR/versions/pg
 
-ln -s $OPENSHIFT_PG_DIR/versions/$version $OPENSHIFT_PG_DIR/versions/pg 
+ln -s $OPENSHIFT_PG_DIR/versions/$version $OPENSHIFT_PG_DIR/versions/pg
 
 echo "5432" > env/PG_PORT
 echo $OPENSHIFT_PG_DIR/versions/pg/bin > env/OPENSHIFT_PG_PATH_ELEMENT
@@ -26,7 +26,7 @@ echo $OPENSHIFT_PG_DIR/versions/pg/bin > env/OPENSHIFT_PG_PATH_ELEMENT
 # this works in ose 2.0 and NOT iin ose 2.1
 echo $OPENSHIFT_PG_DIR/versions/pg/lib > env/LD_LIBRARY_PATH
 
-# this next env var is available in ose 2.1 and is recommended 
+# this next env var is available in ose 2.1 and is recommended
 echo $OPENSHIFT_PG_DIR/versions/pg/lib > env/OPENSHIFT_PG_LD_LIBRARY_PATH_ELEMENT
 echo $OPENSHIFT_PG_HOST > env/STATHOST
 

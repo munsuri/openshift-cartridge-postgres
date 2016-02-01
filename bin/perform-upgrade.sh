@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -eu
 
 #
 # 1st parameter is the path to the postgres archive to upgrade with
