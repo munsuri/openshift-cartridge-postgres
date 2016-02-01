@@ -1,124 +1,65 @@
 #!/bin/bash -eu
 
-version=pg
+source $OPENSHIFT_CARTRIDGE_SDK_BASH
 
 function status() {
-    client_result $pwd
-    ps -C postgres > /dev/null
-    if [ "$?" -eq "0" ]; then
-        client_result "$version is running"
-        client_result "  Connect to $version using:  psql -U $OPENSHIFT_GEAR_UUID -h 127.0.0.1 -p $PG_PORT template1"
+    if [ -s $OPENSHIFT_PG_DATA_DIR/postmaster.pid ]; then
+        client_result "$OPENSHIFT_PG_IDENT is running"
+        client_result "  Connect to pg using:  psql '$OPENSHIFT_PG_DB_URL'"
+        return 0
     else
-        client_result "$version is not running"
-    fi
-
-}
-
-function use-source() {
-    if ! [ $# -gt 0 ]; then
-        echo "Usage: $0 git-repository-url [commit]"
+        client_result "$OPENSHIFT_PG_IDENT is not running"
         return 1
     fi
-    set -e
-    stop
-    mkdir -p $TMP/_env/
-    rm -rf $TMP/_env/*
-    cp env/* $TMP/_env/
-    rm -rf .??* *
-    if [ -n $2 ]; then
-        echo "Switching to using source from $1, commit $2"
-        git clone $1 -b $2 .
-    else
-        echo "Switching to using source from $1"
-        git clone $1 .
-    fi
-    mkdir -p env
-    cp $TMP/_env/* env/
-
-    bin/setup
-}
-
-function update() {
-    stop
-    ./.openshift/action_hooks/build
 }
 
 function start() {
-
-    client_result "starting postgres...."
-    client_result "OPENSHIFT_CRUNCHY_HOST is $OPENSHIFT_CRUNCHY_HOST"
-    client_result "OPENSHIFT_CRUNCHY_PORT is $OPENSHIFT_CRUNCHY_PORT"
-    client_result "OPENSHIFT_CRUNCHY_USER is $OPENSHIFT_CRUNCHY_USER"
-    client_result "OPENSHIFT_CRUNCHY_DATABASE is $OPENSHIFT_CRUNCHY_DATABASE"
-    client_result "psql -U $OPENSHIFT_CRUNCHY_USER -h $OPENSHIFT_CRUNCHY_HOST $OPENSHIFT_CRUNCHY_DATABASE"
-
-    ps -C postgres > /dev/null
-    if [ "$?" -eq "0" ]; then
-        client_result "$version is running already...run stop first"
-    else
-        client_result "$version is not running...starting it now"
-        nohup pg_ctl -D $OPENSHIFT_DATA_DIR/.$version/data start &> /tmp/pg-startup.out
+    if [ -s $OPENSHIFT_PG_DATA_DIR/postmaster.pid ]; then
+        client_result "$OPENSHIFT_PG_IDENT is running already."
+        return 0
     fi
 
+    client_result "starting $OPENSHIFT_PG_IDENT..."
+    out=$OPENSHIFT_TMP_DIR/pg-startup.out
+    if ! nohup pg_ctl -D $OPENSHIFT_PG_DATA_DIR start -w -t 120 &>$out; then
+        cat $out
+        tail -25 $OPENSHIFT_PG_DATA_DIR/pg_log/postgresql-$(date +%u).log
+        return 1
+    fi
+
+    export PGUSER= PGHOST= PGPORT=$OPENSHIFT_PG_PRIVATE_PORT
+    db_exists=$(psql -c '' &>/dev/null && echo 1 || echo 0)
+    if [ "$db_exists" -ne 1 ]; then
+        echo "creating the database..."
+        createuser $OPENSHIFT_PG_DB_USERNAME || true
+        createdb -O $OPENSHIFT_PG_DB_USERNAME $PGDATABASE
+    fi
+
+    if [ -d $OPENSHIFT_TMP_DIR/postgresql-$OPENSHIFT_PG_VERSION ]; then
+        echo "cleaning up..."
+        rm -rf $OPENSHIFT_TMP_DIR/postgresql-$OPENSHIFT_PG_VERSION
+    fi
+
+    client_result "Done. Connect using: psql $OPENSHIFT_PG_DB_URL"
+    client_result "and don't forget to back up your DB regularly"
 }
 
-
 function stop() {
-
-    client_result "stopping postgres...."
-    pg_ctl -m fast -D $OPENSHIFT_DATA_DIR/.$version/data stop;
-
+    client_result "stopping $OPENSHIFT_PG_IDENT..."
+    pg_ctl -m fast -D $OPENSHIFT_PG_DATA_DIR stop
     return 0
 }
 
 function restart() {
-    if (stop); then
-        start
-    else
-        start
-    fi
+    if status; then stop; fi
+    start
 }
-
-function build() {
-    echo
-}
-
-function post-deploy() {
-    echo
-}
-
-function pre-build() {
-    echo
-}
-
-function tidy() {
-    echo
-}
-
-#
-#  main():
-#
-
-# Ensure arguments.
-if ! [ $# -gt 0 ]; then
-    echo "Usage: $0 [start|restart|graceful|graceful-stop|stop|status|update|use-source]"
-    exit 1
-fi
-
-# Source utility functions.
-source $OPENSHIFT_CARTRIDGE_SDK_BASH
 
 # Handle commands.
 case "$1" in
     start)               start       ;;
-    restart|graceful)    restart     ;;
+    restart)             restart     ;;
     graceful-stop|stop)  stop        ;;
     status)              status      ;;
-    build)               build       ;;
-    pre-build)           pre-build   ;;
-    post-deploy)         post-deploy ;;
-    tidy)                tidy        ;;
-    update)              update      ;;
-    use-source)          use-source  $2 $3 ;;
     *)
 esac

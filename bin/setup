@@ -1,38 +1,96 @@
 #!/bin/bash -eu
 
-version=pg-9.3.6
-
 source $OPENSHIFT_CARTRIDGE_SDK_BASH
 
-for dir in logs pid tmp env; do
-    mkdir -p $dir
-done
+case $1 in
+    -v|--version)  ver="$2"
+esac
 
-rm -rf $OPENSHIFT_PG_DIR/versions/$version/
+if ! echo "$ver" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' &>/dev/null; then
+    echo "'$ver' is not a valid version number" && exit 1
+fi
+ver_m=${ver%.*}
 
-mkdir $OPENSHIFT_PG_DIR/versions/$version
+echo "downloading postgresql..."
+tmp_dir=$OPENSHIFT_TMP_DIR/postgresql
+mkdir -p $tmp_dir
+cd $tmp_dir
+wget -c -O $ver.tar.bz2 http://ftp.postgresql.org/pub/source/v$ver/postgresql-$ver.tar.bz2
 
-mkdir -p $OPENSHIFT_DATA_DIR/.pg/data
+echo "building postgresql..."
+tar xaf $ver.tar.bz2
+cd postgresql-$ver
+./configure --prefix=/usr --disable-nls --enable-thread-safety
+make -C src all
+make -C contrib all
 
-tar xzf $OPENSHIFT_PG_DIR/versions/$version-crunchy.tar.gz --directory=$OPENSHIFT_PG_DIR/versions/$version
+echo "installing postgresql..."
+version_dir=${OPENSHIFT_PG_DIR%/}/versions/$ver
+make -C src DESTDIR="$version_dir" install
+make -C contrib DESTDIR="$version_dir" install
 
-rm  $OPENSHIFT_PG_DIR/versions/pg
+echo "generating environment variables..."
+mkdir -p $OPENSHIFT_PG_DIR/env
+cd $OPENSHIFT_PG_DIR/env
 
-ln -s $OPENSHIFT_PG_DIR/versions/$version $OPENSHIFT_PG_DIR/versions/pg
+bin_dir=$version_dir/usr/bin
+data_dir=${OPENSHIFT_DATA_DIR%/}/postgres/data-$ver_m
 
-echo "5432" > env/PG_PORT
-echo $OPENSHIFT_PG_DIR/versions/pg/bin > env/OPENSHIFT_PG_PATH_ELEMENT
+if [ -s OPENSHIFT_PG_VERSION ]; then
+    prev_version=$(<OPENSHIFT_PG_VERSION)
+else
+    prev_version=$ver
+fi
+echo -n $prev_version > OPENSHIFT_PG_PREV_VERSION
 
-# this works in ose 2.0 and NOT iin ose 2.1
-echo $OPENSHIFT_PG_DIR/versions/pg/lib > env/LD_LIBRARY_PATH
+echo -n $ver > OPENSHIFT_PG_VERSION
+echo -n $ver_m > OPENSHIFT_PG_VERSION_MAJOR
+echo -n $version_dir > OPENSHIFT_PG_VERSION_DIR
+echo -n $bin_dir > OPENSHIFT_PG_PATH_ELEMENT
+echo -n $version_dir/usr/lib > OPENSHIFT_PG_LD_LIBRARY_PATH_ELEMENT
+echo -n $data_dir > OPENSHIFT_PG_DATA_DIR
 
-# this next env var is available in ose 2.1 and is recommended
-echo $OPENSHIFT_PG_DIR/versions/pg/lib > env/OPENSHIFT_PG_LD_LIBRARY_PATH_ELEMENT
-echo $OPENSHIFT_PG_HOST > env/STATHOST
+if [ ! -s OPENSHIFT_PG_DB_USERNAME -o ! -s OPENSHIFT_PG_DB_PASSWORD ]; then
+    username=$(echo $OPENSHIFT_APP_NAME | sed -e 's/\W/_/g')
+    password=$(generate_password)
+    echo -n $username | tee PGUSER > OPENSHIFT_PG_DB_USERNAME
+    echo -n $password > OPENSHIFT_PG_DB_PASSWORD
+else
+    username=$(<OPENSHIFT_PG_DB_USERNAME)
+    password=$(<OPENSHIFT_PG_DB_PASSWORD)
+fi
 
-echo $OPENSHIFT_PG_HOST > env/OPENSHIFT_CRUNCHY_HOST
-echo $USER > env/OPENSHIFT_CRUNCHY_USER
-echo "5432" > env/OPENSHIFT_CRUNCHY_PORT
-echo "postgres" > env/OPENSHIFT_CRUNCHY_DATABASE
+dbname=$username
+if [ -z "${OPENSHIFT_PG_PORT-}" ]; then
+    host=
+    port=$OPENSHIFT_PG_PRIVATE_PORT
+    dburl=
+else
+    host=$OPENSHIFT_GEAR_DNS
+    port=$OPENSHIFT_PG_PORT
+    dburl="postgresql://$username:$password@$host:$port/$dbname"
+fi
 
-client_result "$version setup completed"
+echo -n $dbname > PGDATABASE
+echo -n $host | tee PGHOST > OPENSHIFT_PG_DB_HOST
+echo -n $port | tee PGPORT > OPENSHIFT_PG_DB_PORT
+echo -n $dburl > OPENSHIFT_PG_DB_URL
+
+for f in *; do export $f="$(<$f)"; done
+
+echo -n "initializing the database..."
+dbver=$(cat $data_dir/PG_VERSION 2>/dev/null || true)
+if [ -d $data_dir/base -a "$dbver" = $ver_m ]; then
+    echo " already done"
+else
+    echo
+    mkdir -p $data_dir
+    export LC_ALL=en_US.UTF-8
+    $bin_dir/initdb -D $data_dir
+fi
+
+echo "adding server configuration..."
+erb  $version_dir/conf/pg_hba.conf.erb > $data_dir/pg_hba.conf
+erb  $version_dir/conf/postgresql.conf.erb > $data_dir/postgresql.conf
+
+client_result "postgresql-$ver setup completed"
