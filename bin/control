@@ -27,6 +27,24 @@ function start() {
         return 1
     fi
 
+    prev_version_major=${OPENSHIFT_PG_PREV_VERSION%.*}
+    prev_data_dir=${OPENSHIFT_PG_DATA_DIR%-*}-$prev_version_major
+    migration_marker=$prev_data_dir/MIGRATED
+    if [ "$prev_version_major" != "$OPENSHIFT_PG_VERSION_MAJOR" ] &&
+       [ ! -f $migration_marker ]; then
+        echo "migrating the database..."
+        prev_version_dir=$OPENSHIFT_PG_DIR/$OPENSHIFT_PG_PREV_VERSION
+        export LC_ALL=en_US.UTF-8
+        $prev_version_dir/usr/bin/pg_upgrade \
+            -b $prev_version_dir/usr/bin/ \
+            -B $OPENSHIFT_PG_VERSION_DIR/usr/bin/ \
+            -d $prev_data_dir \
+            -D $OPENSHIFT_PG_DATA_DIR \
+            --link
+        touch $migration_marker
+        echo "migration done, please check that everything is okay, then delete $prev_data_dir and $prev_version_dir"
+    fi
+
     export PGUSER= PGHOST= PGPORT=$OPENSHIFT_PG_PRIVATE_PORT
     db_exists=$(psql -c '' &>/dev/null && echo 1 || echo 0)
     if [ "$db_exists" -ne 1 ]; then
