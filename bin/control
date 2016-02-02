@@ -3,9 +3,10 @@
 source $OPENSHIFT_CARTRIDGE_SDK_BASH
 
 function status() {
-    if [ -s $OPENSHIFT_PG_DATA_DIR/postmaster.pid ]; then
+    data_dir=${OPENSHIFT_PG_DATA_DIR-}
+    if [ ! -z "$data_dir" -a -s $data_dir/postmaster.pid ]; then
         client_result "$OPENSHIFT_PG_IDENT is running"
-        client_result "  Connect to pg using:  psql '$OPENSHIFT_PG_DB_URL'"
+        client_result "Connect using:  psql ${OPENSHIFT_PG_DB_URL-}"
         return 0
     else
         client_result "$OPENSHIFT_PG_IDENT is not running"
@@ -63,6 +64,11 @@ function start() {
 }
 
 function stop() {
+    data_dir=${OPENSHIFT_PG_DATA_DIR-}
+    if [ -z "$data_dir" -o -s $OPENSHIFT_PG_DATA_DIR/postmaster.pid ]; then
+        client_result "$OPENSHIFT_PG_IDENT is not running."
+        return 0
+    fi
     client_result "stopping $OPENSHIFT_PG_IDENT..."
     pg_ctl -m fast -D $OPENSHIFT_PG_DATA_DIR stop
     return 0
