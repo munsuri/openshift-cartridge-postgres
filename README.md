@@ -18,4 +18,4 @@ To test the installation run this commands:
 
 To restart the cartridge run this command:
 
-    rhc cartridge restart liberapay-postgres-9.6.0 --app <APP_NAME>
+    rhc cartridge restart ejazmughal-postgres-9.6.0 --app <APP_NAME>
