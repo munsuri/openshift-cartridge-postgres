@@ -28,4 +28,4 @@ Endpoints:
     Protocols:
      - postgresql
 
-Source-Url: https://github.com/ejazmughal/openshift-cartridge-postgres.git
+Source-Url: https://github.com/ejazmughal/openshift-cartridge-postgres/archive/master.zip
