@@ -5,7 +5,7 @@ Display-Name: PostgreSQL 9.6.0
 Description: The PostgreSQL database, version 9.6.0.
 Version: "9.6.0"
 Website: https://github.com/ejazmughal/openshift-cartridge-postgres
-Cartridge-Version: 0.0.1
+Cartridge-Version: 0.0.2
 Cartridge-Vendor: ejazmughal
 Categories:
   - service
