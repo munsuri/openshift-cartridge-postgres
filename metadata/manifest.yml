@@ -27,3 +27,5 @@ Endpoints:
     Public-Port-Name:  PORT
     Protocols:
      - postgresql
+
+Source-Url: https://github.com/ejazmughal/openshift-cartridge-postgres.git
