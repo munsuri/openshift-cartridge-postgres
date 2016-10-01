@@ -1,18 +1,18 @@
 ---
 Name: postgres
 Cartridge-Short-Name: PG
-Display-Name: PostgreSQL 9.4.5
-Description: The PostgreSQL database, version 9.4.5.
-Version: "9.4.5"
-Website: https://github.com/liberapay/openshift-cartridge-postgres
+Display-Name: PostgreSQL 9.6.0
+Description: The PostgreSQL database, version 9.6.0.
+Version: "9.6.0"
+Website: https://github.com/ejazmughal/openshift-cartridge-postgres
 Cartridge-Version: 0.0.1
-Cartridge-Vendor: liberapay
+Cartridge-Vendor: ejazmughal
 Categories:
   - service
   - database
   - embedded
 Provides:
-  - postgresql-9.4
+  - postgresql-9.6
   - postgresql
 Publishes:
   publish-db-connection-info:
