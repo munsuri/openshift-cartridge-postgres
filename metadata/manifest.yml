@@ -23,7 +23,7 @@ Scaling:
 Endpoints:
   - Private-IP-Name:   HOST
     Private-Port-Name: PRIVATE_PORT
-    Private-Port:      5432
+    Private-Port:      8443
     Public-Port-Name:  PORT
     Protocols:
      - postgresql
