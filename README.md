@@ -1,4 +1,4 @@
-A Postgres 9.6.0 Cartridge for OpenShift v2.
+A Postgres 9.6.1 Cartridge for OpenShift v2.
 
 Note: this cartridge does NOT run in an Auto-Scale app configuration.
 
@@ -18,4 +18,4 @@ To test the installation run this commands:
 
 To restart the cartridge run this command:
 
-    rhc cartridge restart ejazmughal-postgres-9.6.0 --app <APP_NAME>
+    rhc cartridge restart ejazmughal-postgres-9.6.1 --app <APP_NAME>

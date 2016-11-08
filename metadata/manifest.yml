@@ -1,18 +1,18 @@
 ---
 Name: postgres
 Cartridge-Short-Name: PG
-Display-Name: PostgreSQL 9.6.0
-Description: The PostgreSQL database, version 9.6.0.
-Version: "9.6.0"
+Display-Name: PostgreSQL 9.6.1
+Description: The PostgreSQL database, version 9.6.1.
+Version: "9.6.1"
 Website: https://github.com/ejazmughal/openshift-cartridge-postgres
-Cartridge-Version: 0.0.2
+Cartridge-Version: 1.0.0
 Cartridge-Vendor: ejazmughal
 Categories:
   - service
   - database
   - embedded
 Provides:
-  - postgresql-9.6
+  - postgresql-9.6.1
   - postgresql
 Publishes:
   publish-db-connection-info:
@@ -23,7 +23,7 @@ Scaling:
 Endpoints:
   - Private-IP-Name:   HOST
     Private-Port-Name: PRIVATE_PORT
-    Private-Port:      8443
+    Private-Port:      5432
     Public-Port-Name:  PORT
     Protocols:
      - postgresql
