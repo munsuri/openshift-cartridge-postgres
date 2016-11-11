@@ -8,7 +8,7 @@
 #   http://git.postgresql.org/gitweb/?p=postgresql.git;a=blob_plain;f=src/backend/libpq/pg_hba.conf.sample;hb=REL9_6_STABLE
 
 # Allow users to connect over the local socket
-local    all         all                                md5
+local    all         all                                trust
 
 # Allow users to connect from the local host with valid credentials
 host     all         all           samehost             md5
