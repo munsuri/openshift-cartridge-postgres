@@ -50,7 +50,7 @@ function start() {
     db_exists=$(psql -c '' &>/dev/null && echo 1 || echo 0)
     if [ "$db_exists" -ne 1 ]; then
         client_result "creating the database..."
-        createuser $OPENSHIFT_PG_DB_USERNAME || true
+        createuser -d -e -E -l -P -r -s $OPENSHIFT_PG_DB_USERNAME || true
         createdb -O $OPENSHIFT_PG_DB_USERNAME $PGDATABASE
     fi
 
